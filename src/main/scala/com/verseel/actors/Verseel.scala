@@ -9,67 +9,67 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class Verseel(implicit timeout: Timeout) extends Actor {
-  import com.verseel.messages.TicketSeller
+  import com.verseel.messages.CompetitorScheduler
 
-//  TicketSeller child
-  def createTicketSeller(name: String): ActorRef = {
-    context.actorOf(TicketSeller.props(name), name)
+//  CompetitorScheduler child
+  def createCompetitorScheduler(name: String): ActorRef = {
+    context.actorOf(CompetitorScheduler.props(name), name)
   }
 
   def receive: PartialFunction[Any, Unit] = {
-    case CreateEvent(name, tickets) ⇒
+    case CreateCompetition(name, competitors) ⇒
       def create(): Unit = {
-//        creates the ticket seller
-        val eventTickets = createTicketSeller(name)
-//        builds a list of numbered tickets
-        val newTickets = (1 to tickets).map { ticketId ⇒
-          TicketSeller.Ticket(ticketId)
+//        creates the competitor seller
+        val competitionCompetitors = createCompetitorScheduler(name)
+//        builds a list of numbered competitors
+        val newCompetitors = (1 to competitors).map { competitorId ⇒
+          CompetitorScheduler.Competitor(competitorId)
         }.toVector
-//        sends the tickets to the TicketSeller
-        eventTickets ! TicketSeller.Add(newTickets)
-//        creates an event and responds with EventCreated
-        sender() ! EventCreated(Event(name, tickets))
+//        sends the competitors to the CompetitorScheduler
+        competitionCompetitors ! CompetitorScheduler.Add(newCompetitors)
+//        creates an competition and responds with CompetitionCreated
+        sender() ! CompetitionCreated(Competition(name, competitors))
       }
-//      If event exists it responds with EventExists
-      context.child(name).fold(create())(_ ⇒ sender() ! EventExists)
+//      If competition exists it responds with CompetitionExists
+      context.child(name).fold(create())(_ ⇒ sender() ! CompetitionExists)
 
 
-    case GetTickets(event, tickets) ⇒
-//      sends an empty Tickets message if the ticket seller couldn't be found
-      def notFound(): Unit = sender() ! TicketSeller.Tickets(event)
-//      buys from the found TicketSeller
+    case GetCompetitors(competition, competitors) ⇒
+//      sends an empty Competitors message if the competitor seller couldn't be found
+      def notFound(): Unit = sender() ! CompetitorScheduler.Competitors(competition)
+//      buys from the found CompetitorScheduler
       def buy(child: ActorRef): Unit = {
-        child.forward(TicketSeller.Buy(tickets))
+        child.forward(CompetitorScheduler.Buy(competitors))
       }
-//      executes notFound or buys with the found TicketSeller
-      context.child(event).fold(notFound())(buy)
+//      executes notFound or buys with the found CompetitorScheduler
+      context.child(competition).fold(notFound())(buy)
 
 
-    case GetEvent(event) =>
+    case GetCompetition(competition) =>
       def notFound() = sender() ! None
-      def getEvent(child: ActorRef) = child forward TicketSeller.GetEvent
-      context.child(event).fold(notFound())(getEvent)
+      def getCompetition(child: ActorRef) = child forward CompetitorScheduler.GetCompetition
+      context.child(competition).fold(notFound())(getCompetition)
 
 
-    case GetEvents ⇒
-      def getEvents = {
+    case GetCompetitions ⇒
+      def getCompetitions = {
         context.children.map { child ⇒
-//          asks all TicketSellers about the events they are selling for
-          self.ask(GetEvent(child.path.name)).mapTo[Option[Event]]
+//          asks all CompetitorScheduler about the competitions they are selling for
+          self.ask(GetCompetition(child.path.name)).mapTo[Option[Competition]]
         }
       }
-      def convertToEvents(f: Future[Iterable[Option[Event]]]): Future[Events] = {
-        f.map(_.flatten).map(l ⇒ Events(l.toVector))
+      def convertToCompetitions(f: Future[Iterable[Option[Competition]]]): Future[Competitions] = {
+        f.map(_.flatten).map(l ⇒ Competitions(l.toVector))
       }
-      pipe(convertToEvents(Future.sequence(getEvents))) to sender()
+      pipe(convertToCompetitions(Future.sequence(getCompetitions))) to sender()
 
 
-    case CancelEvent(event) ⇒
+    case CancelCompetition(competition) ⇒
       def notFound(): Unit = sender() ! None
 //      ActorRef carries the message that should be sent to an Actor
-//      Here we'll forward the message to the TicketSeller actor that an event was canceled
-      def cancelEvent(child: ActorRef): Unit = child forward TicketSeller.Cancel
-      context.child(event).fold(notFound())(cancelEvent)
+//      Here we'll forward the message to the CompetitorScheduler actor that an competition was canceled
+      def cancelCompetition(child: ActorRef): Unit = child forward CompetitorScheduler.Cancel
+      context.child(competition).fold(notFound())(cancelCompetition)
   }
 
 }

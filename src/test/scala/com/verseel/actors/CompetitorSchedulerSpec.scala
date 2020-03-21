@@ -3,11 +3,11 @@ package com.verseel.actors
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
 import com.verseel.StopSystemAfterAll
-import com.verseel.messages.TicketSeller
-import com.verseel.messages.TicketSeller.{Add, Buy, Ticket, Tickets}
+import com.verseel.messages.CompetitorScheduler
+import com.verseel.messages.CompetitorScheduler.{Add, Buy, Competitor, Competitors}
 import org.scalatest.{MustMatchers, WordSpecLike}
 
-class TicketSellerSpec extends TestKit(ActorSystem("testTickets"))
+class CompetitorSchedulerSpec extends TestKit(ActorSystem("testTickets"))
   with WordSpecLike
   with MustMatchers
   with ImplicitSender
@@ -15,39 +15,39 @@ class TicketSellerSpec extends TestKit(ActorSystem("testTickets"))
   "The TicketSeller" must {
     "Sell tickets until they are sold out" in {
 
-      def mkTickets = (1 to 10).map(i=>Ticket(i)).toVector
+      def mkTickets = (1 to 10).map(i=>Competitor(i)).toVector
       val event = "RHCP"
-      val ticketingActor = system.actorOf(TicketSeller.props(event))
+      val ticketingActor = system.actorOf(CompetitorScheduler.props(event))
 
       ticketingActor ! Add(mkTickets)
       ticketingActor ! Buy(1)
 
-      expectMsg(Tickets(event, Vector(Ticket(1))))
+      expectMsg(Competitors(event, Vector(Competitor(1))))
 
       val nrs = 2 to 10
       nrs.foreach(_ => ticketingActor ! Buy(1))
 
       val tickets = receiveN(9)
-      tickets.zip(nrs).foreach { case (Tickets(event, Vector(Ticket(id))), ix) => id must be(ix) }
+      tickets.zip(nrs).foreach { case (Competitors(event, Vector(Competitor(id))), ix) => id must be(ix) }
 
       ticketingActor ! Buy(1)
-      expectMsg(Tickets(event))
+      expectMsg(Competitors(event))
     }
 
     "Sell tickets in batches until they are sold out" in {
 
       val firstBatchSize = 10
 
-      def mkTickets = (1 to (10 * firstBatchSize)).map(i=>Ticket(i)).toVector
+      def mkTickets = (1 to (10 * firstBatchSize)).map(i=>Competitor(i)).toVector
 
       val event = "Madlib"
-      val ticketingActor = system.actorOf(TicketSeller.props(event))
+      val ticketingActor = system.actorOf(CompetitorScheduler.props(event))
 
       ticketingActor ! Add(mkTickets)
       ticketingActor ! Buy(firstBatchSize)
-      val bought = (1 to firstBatchSize).map(Ticket).toVector
+      val bought = (1 to firstBatchSize).map(Competitor).toVector
 
-      expectMsg(Tickets(event, bought))
+      expectMsg(Competitors(event, bought))
 
       val secondBatchSize = 5
       val nrBatches = 18
@@ -58,7 +58,7 @@ class TicketSellerSpec extends TestKit(ActorSystem("testTickets"))
       val tickets = receiveN(nrBatches)
 
       tickets.zip(batches).foreach {
-        case (Tickets(event, bought), ix) =>
+        case (Competitors(event, bought), ix) =>
           bought.size must equal(secondBatchSize)
           val last = ix * secondBatchSize + firstBatchSize
           val first = ix * secondBatchSize + firstBatchSize - (secondBatchSize - 1)
@@ -66,10 +66,10 @@ class TicketSellerSpec extends TestKit(ActorSystem("testTickets"))
       }
 
       ticketingActor ! Buy(1)
-      expectMsg(Tickets(event))
+      expectMsg(Competitors(event))
 
       ticketingActor ! Buy(10)
-      expectMsg(Tickets(event))
+      expectMsg(Competitors(event))
     }
   }
 }

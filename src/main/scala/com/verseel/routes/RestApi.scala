@@ -20,21 +20,21 @@ class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
   def createVerseel(): ActorRef = system.actorOf(Verseel.props)
 }
 
-trait RestRoutes extends VerseelApi with EventMarshaller {
+trait RestRoutes extends VerseelApi with VerseelMarshaller$ {
   val service = "verseel-api"
   val version = "v1"
 
-//  endpoint for creating an event with tickets
-  protected val createEventRoute: Route = {
-    pathPrefix(service / version / "events" / Segment ) { event ⇒
+//  endpoint for creating a competition with competitors
+  protected val createCompetitionRoute: Route = {
+    pathPrefix(service / version / "competitions" / Segment ) { competition ⇒
       post {
-//    POST show-tix/v1/events/event_name
+//    POST verseel-api/v1/competitions/competition_name
         pathEndOrSingleSlash {
-          entity(as[EventDescription]) { ed =>
-            onSuccess(createEvent(event, ed.tickets)) {
-              case Verseel.EventCreated(event) => complete(Created, event)
-              case Verseel.EventExists =>
-                val err = Error(s"$event event already exists!")
+          entity(as[CompetitionDescription]) { ed =>
+            onSuccess(createCompetition(competition, ed.competitors)) {
+              case Verseel.CompetitionCreated(competition) => complete(Created, competition)
+              case Verseel.CompetitionExists =>
+                val err = Error(s"$competition competition already exists!")
                 complete(BadRequest, err)
             }
           }
@@ -43,25 +43,25 @@ trait RestRoutes extends VerseelApi with EventMarshaller {
     }
   }
 
-  protected val getAllEventsRoute: Route = {
-    pathPrefix(service / version / "events") {
+  protected val getAllCompetitionsRoute: Route = {
+    pathPrefix(service / version / "competitions") {
       get {
-        // GET show-tix/v1/events
+        // GET verseel-api/v1/competitions
         pathEndOrSingleSlash {
-          onSuccess(getEvents()) { events ⇒
-            complete(OK, events)
+          onSuccess(getCompetitions()) { competitions ⇒
+            complete(OK, competitions)
           }
         }
       }
     }
   }
 
-  protected val getEventRoute: Route = {
-    pathPrefix(service / version / "events" / Segment) { event ⇒
+  protected val getCompetitionRoute: Route = {
+    pathPrefix(service / version / "competitions" / Segment) { competition ⇒
       get {
-        // GET show-tix/v1/events/:event
+        // GET verseel-api/v1/competitions/:competition
         pathEndOrSingleSlash {
-          onSuccess(getEvent(event)) {
+          onSuccess(getCompetition(competition)) {
             _.fold(complete(NotFound))(e ⇒ complete(OK, e))
           }
         }
@@ -69,12 +69,12 @@ trait RestRoutes extends VerseelApi with EventMarshaller {
     }
   }
 
-  protected val deleteEventRoute: Route = {
-    pathPrefix(service / version / "events" / Segment) { event ⇒
+  protected val deleteCompetitionRoute: Route = {
+    pathPrefix(service / version / "competitions" / Segment) { competition ⇒
       delete {
-        // DELETE show-tix/v1/events/:event
+        // DELETE verseel-api/v1/competitions/:competition
         pathEndOrSingleSlash {
-          onSuccess(cancelEvent(event)) {
+          onSuccess(cancelCompetition(competition)) {
             _.fold(complete(NotFound))(e => complete(OK, e))
           }
         }
@@ -82,13 +82,13 @@ trait RestRoutes extends VerseelApi with EventMarshaller {
     }
   }
 
-  protected val purchaseEventTicketRoute: Route = {
-    pathPrefix(service / version / "events" / Segment / "tickets") { event ⇒
+  protected val purchaseCompetitionTicketRoute: Route = {
+    pathPrefix(service / version / "competitions" / Segment / "tickets") { competition ⇒
       post {
-        // POST show-tix/v1/events/:event/tickets
+        // POST verseel-api/v1/competitions/:competition/tickets
         pathEndOrSingleSlash {
-          entity(as[TicketRequest]) { request ⇒
-            onSuccess(requestTickets(event, request.tickets)) { tickets ⇒
+          entity(as[CompetitorRequest]) { request ⇒
+            onSuccess(requestCompetitors(competition, request.competitors)) { tickets ⇒
               if (tickets.entries.isEmpty) complete(NotFound)
               else complete(Created, tickets)
             }
@@ -99,7 +99,7 @@ trait RestRoutes extends VerseelApi with EventMarshaller {
   }
 
 
-  val routes: Route = createEventRoute ~ getAllEventsRoute ~ getEventRoute ~ deleteEventRoute ~ purchaseEventTicketRoute
+  val routes: Route = createCompetitionRoute ~ getAllCompetitionsRoute ~ getCompetitionRoute ~ deleteCompetitionRoute ~ purchaseCompetitionTicketRoute
 }
 
 trait VerseelApi {
@@ -111,18 +111,18 @@ trait VerseelApi {
 
   lazy val verseel: ActorRef = createVerseel()
 
-  def createEvent(event: String, numberOfTickets: Int): Future[EventResponse] = {
-    verseel.ask(CreateEvent(event, numberOfTickets))
-      .mapTo[EventResponse]
+  def createCompetition(competition: String, numberOfTickets: Int): Future[CompetitionResponse] = {
+    verseel.ask(CreateCompetition(competition, numberOfTickets))
+      .mapTo[CompetitionResponse]
   }
 
-  def getEvents(): Future[Events] = verseel.ask(GetEvents).mapTo[Events]
+  def getCompetitions(): Future[Competitions] = verseel.ask(GetCompetitions).mapTo[Competitions]
 
-  def getEvent(event: String): Future[Option[Event]] = verseel.ask(GetEvent(event)).mapTo[Option[Event]]
+  def getCompetition(competition: String): Future[Option[Competition]] = verseel.ask(GetCompetition(competition)).mapTo[Option[Competition]]
 
-  def cancelEvent(event: String): Future[Option[Event]] = verseel.ask(CancelEvent(event)).mapTo[Option[Event]]
+  def cancelCompetition(competition: String): Future[Option[Competition]] = verseel.ask(CancelCompetition(competition)).mapTo[Option[Competition]]
 
-  def requestTickets(event: String, tickets: Int): Future[TicketSeller.Tickets] = {
-    verseel.ask(GetTickets(event, tickets)).mapTo[TicketSeller.Tickets]
+  def requestCompetitors(competition: String, competitors: Int): Future[CompetitorScheduler.Competitors] = {
+    verseel.ask(GetCompetitors(competition, competitors)).mapTo[CompetitorScheduler.Competitors]
   }
 }

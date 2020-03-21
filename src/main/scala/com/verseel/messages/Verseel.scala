@@ -7,18 +7,18 @@ import com.verseel.actors.Verseel
 object Verseel {
   def props(implicit timeout: Timeout) = Props(new Verseel)
 
-  case class CreateEvent(name: String, tickets: Int) // message to create an event
-  case class GetEvent(name: String) // message to get an event
-  case object GetEvents // message to request all events
-  case class GetTickets(event: String, tickets: Int) // message to get tickets for an event
-  case class CancelEvent(name: String) // message to cancel an event
+  case class CreateCompetition(name: String, competitors: Int) // message to create a competition
+  case class GetCompetition(name: String) // message to get a competition
+  case object GetCompetitions // message to request all competitions
+  case class GetCompetitors(competition: String, competitors: Int) // message to get competitors for a competition
+  case class CancelCompetition(name: String) // message to cancel a competition
 
-  case class Event(name: String, tickets: Int) // message describing the event
-  case class Events(events: Vector[Event]) // message describing a list of events
+  case class Competition(name: String, competitors: Int) // message describing the competition
+  case class Competitions(competitions: Vector[Competition]) // message describing a list of competitions
 
-  sealed trait EventResponse // message response to create an event
-  case class EventCreated(event: Event) extends EventResponse // message to indicate the event was created
-  case object EventExists extends EventResponse // message to indicate that the event already exists
+  sealed trait CompetitionResponse // message response to create a competition
+  case class CompetitionCreated(competition: Competition) extends CompetitionResponse // message to indicate the competition was created
+  case object CompetitionExists extends CompetitionResponse // message to indicate that the competition already exists
 }
 
 

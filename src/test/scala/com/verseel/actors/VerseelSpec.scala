@@ -5,7 +5,7 @@ import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
 import com.verseel.StopSystemAfterAll
 import com.verseel.messages.Verseel
 import com.verseel.messages.Verseel._
-import com.verseel.messages.TicketSeller._
+import com.verseel.messages.CompetitorScheduler._
 import org.scalatest.{MustMatchers, WordSpecLike}
 
 class VerseelSpec extends TestKit(ActorSystem("testBoxOffice"))
@@ -20,45 +20,45 @@ class VerseelSpec extends TestKit(ActorSystem("testBoxOffice"))
 
       val verseel = system.actorOf(Verseel.props)
       val eventName = "RHCP"
-      verseel ! CreateEvent(eventName, 10)
-      expectMsg(EventCreated(Event(eventName, 10)))
+      verseel ! CreateCompetition(eventName, 10)
+      expectMsg(CompetitionCreated(Competition(eventName, 10)))
 
-      verseel ! GetEvents
-      expectMsg(Events(Vector(Event(eventName, 10))))
+      verseel ! GetCompetitions
+      expectMsg(Competitions(Vector(Competition(eventName, 10))))
 
-      verseel ! Verseel.GetEvent(eventName)
-      expectMsg(Some(Event(eventName, 10)))
+      verseel ! Verseel.GetCompetition(eventName)
+      expectMsg(Some(Competition(eventName, 10)))
 
-      verseel ! GetTickets(eventName, 1)
-      expectMsg(Tickets(eventName, Vector(Ticket(1))))
+      verseel ! GetCompetitors(eventName, 1)
+      expectMsg(Competitors(eventName, Vector(Competitor(1))))
 
-      verseel ! GetTickets("DavidBowie", 1)
-      expectMsg(Tickets("DavidBowie"))
+      verseel ! GetCompetitors("DavidBowie", 1)
+      expectMsg(Competitors("DavidBowie"))
     }
 
     "Create a child actor when an event is created and sends it a Tickets message" in {
       val verseel = system.actorOf(Props(
         new Verseel  {
-          override def createTicketSeller(name: String): ActorRef = testActor
+          override def createCompetitorScheduler(name: String): ActorRef = testActor
         }
       )
       )
 
       val tickets = 3
       val eventName = "RHCP"
-      val expectedTickets = (1 to tickets).map(Ticket).toVector
-      verseel ! CreateEvent(eventName, tickets)
+      val expectedTickets = (1 to tickets).map(Competitor).toVector
+      verseel ! CreateCompetition(eventName, tickets)
       expectMsg(Add(expectedTickets))
-      expectMsg(EventCreated(Event(eventName, tickets)))
+      expectMsg(CompetitionCreated(Competition(eventName, tickets)))
     }
 
     "Get and cancel an event that is not created yet" in {
       val verseel = system.actorOf(Verseel.props)
       val noneExitEventName = "noExitEvent"
-      verseel ! Verseel.GetEvent(noneExitEventName)
+      verseel ! Verseel.GetCompetition(noneExitEventName)
       expectMsg(None)
 
-      verseel ! CancelEvent(noneExitEventName)
+      verseel ! CancelCompetition(noneExitEventName)
       expectMsg(None)
     }
 
@@ -66,7 +66,7 @@ class VerseelSpec extends TestKit(ActorSystem("testBoxOffice"))
       val verseel = system.actorOf(Verseel.props)
       val noneExitEventName = "noExitEvent"
 
-      verseel ! CancelEvent(noneExitEventName)
+      verseel ! CancelCompetition(noneExitEventName)
       expectMsg(None)
     }
 
@@ -74,11 +74,11 @@ class VerseelSpec extends TestKit(ActorSystem("testBoxOffice"))
       val verseel = system.actorOf(Verseel.props)
       val eventName = "RHCP"
       val tickets = 10
-      verseel ! CreateEvent(eventName, tickets)
-      expectMsg(EventCreated(Event(eventName, tickets)))
+      verseel ! CreateCompetition(eventName, tickets)
+      expectMsg(CompetitionCreated(Competition(eventName, tickets)))
 
-      verseel ! CancelEvent(eventName)
-      expectMsg(Some(Event(eventName, tickets)))
+      verseel ! CancelCompetition(eventName)
+      expectMsg(Some(Competition(eventName, tickets)))
     }
   }
 
