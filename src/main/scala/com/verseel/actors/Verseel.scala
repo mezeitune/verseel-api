@@ -3,12 +3,12 @@ package com.verseel.actors
 import akka.actor._
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import com.verseel.messages.Coachella._
+import com.verseel.messages.Verseel._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class Coachella(implicit timeout: Timeout) extends Actor {
+class Verseel(implicit timeout: Timeout) extends Actor {
   import com.verseel.messages.TicketSeller
 
 //  TicketSeller child

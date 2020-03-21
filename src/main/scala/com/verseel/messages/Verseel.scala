@@ -2,10 +2,10 @@ package com.verseel.messages
 
 import akka.actor.Props
 import akka.util.Timeout
-import com.verseel.actors.Coachella
+import com.verseel.actors.Verseel
 
-object Coachella {
-  def props(implicit timeout: Timeout) = Props(new Coachella)
+object Verseel {
+  def props(implicit timeout: Timeout) = Props(new Verseel)
 
   case class CreateEvent(name: String, tickets: Int) // message to create an event
   case class GetEvent(name: String) // message to get an event

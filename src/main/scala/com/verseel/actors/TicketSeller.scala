@@ -1,7 +1,7 @@
 package com.verseel.actors
 
 import akka.actor.{Actor, PoisonPill}
-import com.verseel.messages.Coachella
+import com.verseel.messages.Verseel
 
 class TicketSeller(event: String) extends Actor {
   import com.verseel.messages.TicketSeller._
@@ -23,9 +23,9 @@ class TicketSeller(event: String) extends Actor {
 //   otherwise respond with an empty Tickets message
     } else sender() ! Tickets(event)
 // returns an event containing the number of tickets left when GetEvent is received
-    case GetEvent ⇒ sender() ! Some(Coachella.Event(event, tickets.size))
+    case GetEvent ⇒ sender() ! Some(Verseel.Event(event, tickets.size))
 
-    case Cancel ⇒ sender() ! Some(Coachella.Event(event, tickets.size))
+    case Cancel ⇒ sender() ! Some(Verseel.Event(event, tickets.size))
       self ! PoisonPill
   }
 }

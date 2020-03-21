@@ -6,7 +6,7 @@ import akka.pattern.ask
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import com.verseel.messages.Coachella._
+import com.verseel.messages.Verseel._
 import com.verseel.messages._
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -17,11 +17,11 @@ class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
   implicit val requestTimeout: Timeout = timeout
   implicit def executionContext: ExecutionContextExecutor = system.dispatcher
 
-  def createVerseel(): ActorRef = system.actorOf(Coachella.props)
+  def createVerseel(): ActorRef = system.actorOf(Verseel.props)
 }
 
 trait RestRoutes extends VerseelApi with EventMarshaller {
-  val service = "show-tix"
+  val service = "verseel-api"
   val version = "v1"
 
 //  endpoint for creating an event with tickets
@@ -32,8 +32,8 @@ trait RestRoutes extends VerseelApi with EventMarshaller {
         pathEndOrSingleSlash {
           entity(as[EventDescription]) { ed =>
             onSuccess(createEvent(event, ed.tickets)) {
-              case Coachella.EventCreated(event) => complete(Created, event)
-              case Coachella.EventExists =>
+              case Verseel.EventCreated(event) => complete(Created, event)
+              case Verseel.EventExists =>
                 val err = Error(s"$event event already exists!")
                 complete(BadRequest, err)
             }

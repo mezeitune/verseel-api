@@ -1,7 +1,7 @@
 package com.verseel.messages
 
 import play.api.libs.json._
-import com.verseel.messages.Coachella._
+import com.verseel.messages.Verseel._
 import de.heikoseeberger.akkahttpplayjson._
 
 // message containing the initial number of tickets for the event
