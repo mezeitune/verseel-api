@@ -3,8 +3,8 @@ package com.verseel.actors
 import akka.actor.{Actor, PoisonPill}
 import com.verseel.messages.Verseel
 
-class CompetitorScheduler(competition: String) extends Actor {
-  import com.verseel.messages.CompetitorScheduler._
+class CompetitorEnrollment(competition: String) extends Actor {
+  import com.verseel.messages.CompetitorEnrollment._
 //  list of competitors
   var competitors = Vector.empty[Competitor]
 
@@ -23,9 +23,9 @@ class CompetitorScheduler(competition: String) extends Actor {
 //   otherwise respond with an empty Competitors message
     } else sender() ! Competitors(competition)
 // returns an competition containing the number of competitors left when GetCompetition is received
-    case GetCompetition ⇒ sender() ! Some(Verseel.Competition(competition, competitors.size))
+    case GetCompetition ⇒ sender() ! Some(Verseel.Competition(competitors, competition))
 
-    case Cancel ⇒ sender() ! Some(Verseel.Competition(competition, competitors.size))
+    case Cancel ⇒ sender() ! Some(Verseel.Competition(competitors, competition))
       self ! PoisonPill
   }
 }

@@ -15,11 +15,14 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-actor"      % akkaVersion,
     "com.typesafe.akka" %% "akka-http-core"  % akkaHttp,
     "com.typesafe.akka" %% "akka-http"       % akkaHttp,
-    "com.typesafe.play" %% "play-ws-standalone-json"       % "1.1.8",
+    "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttp,
     "com.typesafe.akka" %% "akka-slf4j"      % akkaVersion,
     "ch.qos.logback"    %  "logback-classic" % "1.2.3",
     "de.heikoseeberger" %% "akka-http-play-json"   % "1.17.0",
     "com.typesafe.akka" %% "akka-testkit"    % akkaVersion   % "test",
-    "org.scalatest"     %% "scalatest"       % "3.0.5"       % "test"
+    "org.scalatest"     %% "scalatest"       % "3.0.5"       % "test",
+    "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
+    "com.github.scullxbones" %% "akka-persistence-mongo-scala" % "2.3.2",
+    "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.14" % "test"
   )
 }

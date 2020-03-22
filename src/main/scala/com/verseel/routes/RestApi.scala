@@ -11,6 +11,7 @@ import com.verseel.messages._
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import StatusCodes._
+import com.verseel.messages.CompetitorEnrollment.Competitor
 
 
 class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
@@ -20,22 +21,22 @@ class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
   def createVerseel(): ActorRef = system.actorOf(Verseel.props)
 }
 
-trait RestRoutes extends VerseelApi with VerseelMarshaller$ {
+trait RestRoutes extends VerseelApi with JsonSupport{
   val service = "verseel-api"
   val version = "v1"
 
 //  endpoint for creating a competition with competitors
   protected val createCompetitionRoute: Route = {
-    pathPrefix(service / version / "competitions" / Segment ) { competition ⇒
+    pathPrefix(service / version / "competitions" / Segment ) { competitionName ⇒
       post {
 //    POST verseel-api/v1/competitions/competition_name
         pathEndOrSingleSlash {
-          entity(as[CompetitionDescription]) { ed =>
-            onSuccess(createCompetition(competition, ed.competitors)) {
+          entity(as[CompetitionDescription]) { competitionDescription =>
+            onSuccess(createCompetition(competitionName, competitionDescription.competitors)) {
               case Verseel.CompetitionCreated(competition) => complete(Created, competition)
               case Verseel.CompetitionExists =>
-                val err = Error(s"$competition competition already exists!")
-                complete(BadRequest, err)
+                val err = Error(s"$competitionName competition already exists!")
+                complete(err)
             }
           }
         }
@@ -111,8 +112,8 @@ trait VerseelApi {
 
   lazy val verseel: ActorRef = createVerseel()
 
-  def createCompetition(competition: String, numberOfTickets: Int): Future[CompetitionResponse] = {
-    verseel.ask(CreateCompetition(competition, numberOfTickets))
+  def createCompetition(competition: String, competitors: Seq[Competitor]): Future[CompetitionResponse] = {
+    verseel.ask(CreateCompetition(competition, competitors))
       .mapTo[CompetitionResponse]
   }
 
@@ -122,7 +123,7 @@ trait VerseelApi {
 
   def cancelCompetition(competition: String): Future[Option[Competition]] = verseel.ask(CancelCompetition(competition)).mapTo[Option[Competition]]
 
-  def requestCompetitors(competition: String, competitors: Int): Future[CompetitorScheduler.Competitors] = {
-    verseel.ask(GetCompetitors(competition, competitors)).mapTo[CompetitorScheduler.Competitors]
+  def requestCompetitors(competition: String, competitors: Int): Future[CompetitorEnrollment.Competitors] = {
+    verseel.ask(GetCompetitors(competition, competitors)).mapTo[CompetitorEnrollment.Competitors]
   }
 }
