@@ -1,43 +1,58 @@
 package com.verseel.routes
 
 import akka.actor.{ActorRef, ActorSystem}
-import akka.util.Timeout
-import akka.pattern.ask
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
+import akka.pattern.ask
+import akka.util.Timeout
+import com.verseel.competitionScheduler.CompetitionScheduler
+import com.verseel.messages.CompetitionHandler.Competitor
 import com.verseel.messages.Verseel._
 import com.verseel.messages._
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import StatusCodes._
-import com.verseel.messages.CompetitorEnrollment.Competitor
 
 
 class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
   implicit val requestTimeout: Timeout = timeout
+
   implicit def executionContext: ExecutionContextExecutor = system.dispatcher
 
   def createVerseel(): ActorRef = system.actorOf(Verseel.props)
 }
 
-trait RestRoutes extends VerseelApi with JsonSupport{
+trait RestRoutes extends VerseelApi with JsonSupport {
   val service = "verseel-api"
   val version = "v1"
 
-//  endpoint for creating a competition with competitors
+  //  endpoint for creating a competition with competitors
   protected val createCompetitionRoute: Route = {
-    pathPrefix(service / version / "competitions" / Segment ) { competitionName ⇒
+    pathPrefix(service / version / "competitions" / Segment) { competitionName ⇒
       post {
-//    POST verseel-api/v1/competitions/competition_name
+        //    POST verseel-api/v1/competitions/competition_name
         pathEndOrSingleSlash {
           entity(as[CompetitionDescription]) { competitionDescription =>
-            onSuccess(createCompetition(competitionName, competitionDescription.competitors)) {
+            onSuccess(createCompetition(competitionName, competitionDescription.competitors, competitionDescription.competitionScheduler.get)) {
               case Verseel.CompetitionCreated(competition) => complete(Created, competition)
               case Verseel.CompetitionExists =>
                 val err = Error(s"$competitionName competition already exists!")
                 complete(err)
             }
+          }
+        }
+      }
+    }
+  }
+
+  protected val deleteCompetitionRoute: Route = {
+    pathPrefix(service / version / "competitions" / Segment) { competition ⇒
+      delete {
+        // DELETE verseel-api/v1/competitions/:competition
+        pathEndOrSingleSlash {
+          onSuccess(cancelCompetition(competition)) {
+            _.fold(complete(NotFound))(e => complete(OK, e))
           }
         }
       }
@@ -70,19 +85,6 @@ trait RestRoutes extends VerseelApi with JsonSupport{
     }
   }
 
-  protected val deleteCompetitionRoute: Route = {
-    pathPrefix(service / version / "competitions" / Segment) { competition ⇒
-      delete {
-        // DELETE verseel-api/v1/competitions/:competition
-        pathEndOrSingleSlash {
-          onSuccess(cancelCompetition(competition)) {
-            _.fold(complete(NotFound))(e => complete(OK, e))
-          }
-        }
-      }
-    }
-  }
-
   protected val purchaseCompetitionTicketRoute: Route = {
     pathPrefix(service / version / "competitions" / Segment / "tickets") { competition ⇒
       post {
@@ -108,12 +110,13 @@ trait VerseelApi {
   def createVerseel(): ActorRef
 
   implicit def executionContext: ExecutionContext
+
   implicit def requestTimeout: Timeout
 
   lazy val verseel: ActorRef = createVerseel()
 
-  def createCompetition(competition: String, competitors: Seq[Competitor]): Future[CompetitionResponse] = {
-    verseel.ask(CreateCompetition(competition, competitors))
+  def createCompetition(competition: String, competitors: Seq[Competitor], scheduler: CompetitionScheduler): Future[CompetitionResponse] = {
+    verseel.ask(CreateCompetition(competition, competitors, scheduler))
       .mapTo[CompetitionResponse]
   }
 
@@ -123,7 +126,7 @@ trait VerseelApi {
 
   def cancelCompetition(competition: String): Future[Option[Competition]] = verseel.ask(CancelCompetition(competition)).mapTo[Option[Competition]]
 
-  def requestCompetitors(competition: String, competitors: Int): Future[CompetitorEnrollment.Competitors] = {
-    verseel.ask(GetCompetitors(competition, competitors)).mapTo[CompetitorEnrollment.Competitors]
+  def requestCompetitors(competition: String, competitors: Int): Future[CompetitionHandler.Competitors] = {
+    verseel.ask(GetCompetitors(competition, competitors)).mapTo[CompetitionHandler.Competitors]
   }
 }

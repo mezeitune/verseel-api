@@ -21,8 +21,10 @@ libraryDependencies ++= {
     "de.heikoseeberger" %% "akka-http-play-json"   % "1.17.0",
     "com.typesafe.akka" %% "akka-testkit"    % akkaVersion   % "test",
     "org.scalatest"     %% "scalatest"       % "3.0.5"       % "test",
-    "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
     "com.github.scullxbones" %% "akka-persistence-mongo-scala" % "2.3.2",
-    "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.14" % "test"
+    "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.14" % "test",
+    "com.typesafe.akka"         %% "akka-persistence"  % akkaVersion,
+    "org.iq80.leveldb"           % "leveldb"           % "0.7",
+    "org.fusesource.leveldbjni"  % "leveldbjni-all"    % "1.8"
   )
 }

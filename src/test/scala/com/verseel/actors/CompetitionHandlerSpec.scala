@@ -3,24 +3,24 @@ package com.verseel.actors
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
 import com.verseel.StopSystemAfterAll
-import com.verseel.messages.CompetitorEnrollment
-import com.verseel.messages.CompetitorEnrollment.{Add, Buy, Competitor, Competitors}
+import com.verseel.messages.CompetitionHandler
+import com.verseel.messages.CompetitionHandler.{CreateCompetition, Buy, Competitor, Competitors}
 import org.scalatest.{Ignore, MustMatchers, WordSpecLike}
 @Ignore
-class CompetitorEnrollmentSpec extends TestKit(ActorSystem("testCompetitors"))
+class CompetitionHandlerSpec extends TestKit(ActorSystem("testCompetitors"))
   with WordSpecLike
   with MustMatchers
   with ImplicitSender
   with StopSystemAfterAll {
-
-  "The CompetitorEnrollment" must {
+/*
+  "The CompetitionHandler" must {
     "Sell tickets until they are sold out" in {
 
       def mkCompetitors = Seq(Competitor("manolo"), Competitor("horacio")).toVector
       val competition = "RHCP"
-      val competitorActor = system.actorOf(CompetitorEnrollment.props(competition))
+      val competitorActor = system.actorOf(CompetitionHandler.props(competition))
 
-      competitorActor ! Add(mkCompetitors)
+      competitorActor ! CreateCompetition(mkCompetitors)
       competitorActor ! Buy(1)
 
       expectMsg(Competitors(competition, Vector(Competitor("manolo"))))
@@ -42,9 +42,9 @@ class CompetitorEnrollmentSpec extends TestKit(ActorSystem("testCompetitors"))
       def mkCompetitors = Seq(Competitor("manolo"), Competitor("horacio")).toVector
 
       val event = "Madlib"
-      val ticketingActor = system.actorOf(CompetitorEnrollment.props(event))
+      val ticketingActor = system.actorOf(CompetitionHandler.props(event))
 
-      ticketingActor ! Add(mkCompetitors)
+      ticketingActor ! CreateCompetition(mkCompetitors)
       ticketingActor ! Buy(firstBatchSize)
       val bought = Seq(Competitor("manolo"), Competitor("horacio")).toVector
 
@@ -73,5 +73,8 @@ class CompetitorEnrollmentSpec extends TestKit(ActorSystem("testCompetitors"))
       expectMsg(Competitors(event))
     }
   }
+
+
+ */
 }
 
